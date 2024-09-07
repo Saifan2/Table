@@ -9,51 +9,101 @@
 <body>
     <div class="container">
         <h1>BBCode Table Builder</h1>
-
+        
         <div class="controls">
-            <label for="rows">Number of rows:</label>
-            <input type="number" id="rows" value="3" min="1">
-
-            <label for="cols">Number of columns:</label>
-            <input type="number" id="cols" value="3" min="1">
-
-            <label for="border">Border size (px):</label>
-            <input type="number" id="border" value="1" min="0">
-
-            <label for="border-color">Border color:</label>
-            <input type="color" id="border-color" value="#000000">
-
-            <label for="width">Table width (%):</label>
-            <input type="number" id="width" value="100" min="10" max="100">
+            <div class="control-group">
+                <label for="rows">Number of rows:</label>
+                <input type="number" id="rows" min="1" value="3">
+            </div>
+            <div class="control-group">
+                <label for="cols">Number of columns:</label>
+                <input type="number" id="cols" min="1" value="3">
+            </div>
+            <div class="control-group">
+                <label for="border">Border size (px):</label>
+                <input type="number" id="border" min="0" value="1">
+            </div>
+            <div class="control-group">
+                <label for="border-color">Border color:</label>
+                <input type="color" id="border-color" value="#000000">
+            </div>
+            <div class="control-group">
+                <label for="width">Table width (%):</label>
+                <input type="number" id="width" min="1" max="100" value="100">
+            </div>
         </div>
 
-        <div id="table-container">
-            <table id="bbcode-table"></table>
-        </div>
+        <div id="table-container"></div>
 
-        <div class="color-controls">
-            <h3>Header Colors</h3>
-            <label for="header-text-color">Header text color:</label>
-            <input type="color" id="header-text-color" value="#000000">
-
-            <label for="header-bg-color">Header background color:</label>
-            <input type="color" id="header-bg-color" value="#ffffff">
-        </div>
-
-        <div class="color-controls">
-            <h3>Cell Colors</h3>
-            <label for="cell-text-color">Text color:</label>
-            <input type="color" id="cell-text-color" value="#000000">
-
-            <label for="cell-bg-color">Background color:</label>
-            <input type="color" id="cell-bg-color" value="#ffffff">
+        <div class="styling-controls">
+            <div class="style-section">
+                <h3>Cell Styles</h3>
+                <div class="control-group">
+                    <label for="cell-font">Font:</label>
+                    <select id="cell-font"></select>
+                </div>
+                <div class="control-group">
+                    <label for="cell-size">Size:</label>
+                    <select id="cell-size"></select>
+                </div>
+                <div class="control-group">
+                    <label for="cell-text-color">Text color:</label>
+                    <input type="color" id="cell-text-color" value="#000000">
+                </div>
+                <div class="control-group">
+                    <label for="cell-bg-color">Background color:</label>
+                    <input type="color" id="cell-bg-color" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="cell-bold">Bold:</label>
+                    <input type="checkbox" id="cell-bold">
+                </div>
+                <div class="control-group">
+                    <label for="cell-italic">Italic:</label>
+                    <input type="checkbox" id="cell-italic">
+                </div>
+                <div class="control-group">
+                    <label for="cell-underline">Underline:</label>
+                    <input type="checkbox" id="cell-underline">
+                </div>
+            </div>
+            
+            <div class="style-section">
+                <h3>Header Styles</h3>
+                <div class="control-group">
+                    <label for="header-font">Font:</label>
+                    <select id="header-font"></select>
+                </div>
+                <div class="control-group">
+                    <label for="header-size">Size:</label>
+                    <select id="header-size"></select>
+                </div>
+                <div class="control-group">
+                    <label for="header-text-color">Text color:</label>
+                    <input type="color" id="header-text-color" value="#000000">
+                </div>
+                <div class="control-group">
+                    <label for="header-bg-color">Background color:</label>
+                    <input type="color" id="header-bg-color" value="#f0f0f0">
+                </div>
+                <div class="control-group">
+                    <label for="header-bold">Bold:</label>
+                    <input type="checkbox" id="header-bold" checked>
+                </div>
+                <div class="control-group">
+                    <label for="header-italic">Italic:</label>
+                    <input type="checkbox" id="header-italic">
+                </div>
+                <div class="control-group">
+                    <label for="header-underline">Underline:</label>
+                    <input type="checkbox" id="header-underline">
+                </div>
+            </div>
         </div>
 
         <button id="generate">Generate BBCode</button>
-
         <textarea id="bbcode-output" rows="10" readonly></textarea>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
