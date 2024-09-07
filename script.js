@@ -4,164 +4,218 @@ document.addEventListener('DOMContentLoaded', () => {
     const borderInput = document.getElementById('border');
     const borderColorInput = document.getElementById('border-color');
     const widthInput = document.getElementById('width');
-    const table = document.getElementById('bbcode-table');
+    const tableContainer = document.getElementById('table-container');
     const generateButton = document.getElementById('generate');
     const bbcodeOutput = document.getElementById('bbcode-output');
     const textColorInput = document.getElementById('cell-text-color');
     const bgColorInput = document.getElementById('cell-bg-color');
     const headerTextColorInput = document.getElementById('header-text-color');
     const headerBgColorInput = document.getElementById('header-bg-color');
+    const headerFontSelect = document.getElementById('header-font');
+    const headerSizeSelect = document.getElementById('header-size');
+    const cellFontSelect = document.getElementById('cell-font');
+    const cellSizeSelect = document.getElementById('cell-size');
+    const headerBoldCheckbox = document.getElementById('header-bold');
+    const headerItalicCheckbox = document.getElementById('header-italic');
+    const headerUnderlineCheckbox = document.getElementById('header-underline');
+    const cellBoldCheckbox = document.getElementById('cell-bold');
+    const cellItalicCheckbox = document.getElementById('cell-italic');
+    const cellUnderlineCheckbox = document.getElementById('cell-underline');
 
-    let currentCell = null;
+    let selectedCells = [];
 
-    // Create or update table based on inputs
+    const fonts = ["Arial", "Arial Black", "Arial Narrow", "Book Antiqua", "Century Gothic", "Comic Sans MS", "Courier New", "Fixedsys", "Franklin Gothic Medium", "Garamond", "Georgia", "Impact", "Lucida Console", "Lucida Sans Unicode", "Microsoft Sans Serif", "Palatino Linotype", "System", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana", "rancho", "almoni-dl", "Open Sans Hebrew"];
+    const sizes = ["1", "2", "3", "4", "5", "6", "7"];
+
+    function populateSelectOptions() {
+        fonts.forEach(font => {
+            headerFontSelect.add(new Option(font, font));
+            cellFontSelect.add(new Option(font, font));
+        });
+
+        sizes.forEach(size => {
+            headerSizeSelect.add(new Option(size, size));
+            cellSizeSelect.add(new Option(size, size));
+        });
+    }
+
     function createTable() {
         const rows = parseInt(rowsInput.value);
         const cols = parseInt(colsInput.value);
+        let existingTable = document.getElementById('bbcode-table');
+        let existingContent = [];
 
-        const existingData = saveCurrentTableState();
+        // Preserve existing content
+        if (existingTable) {
+            existingContent = Array.from(existingTable.rows).map(row => 
+                Array.from(row.cells).map(cell => ({
+                    content: cell.innerHTML,
+                    style: cell.getAttribute('style')
+                }))
+            );
+        }
 
-        // Clear and recreate table
-        table.innerHTML = '';
+        let tableHTML = `<table id="bbcode-table" style="border: ${borderInput.value}px solid ${borderColorInput.value}; width: ${widthInput.value}%;">`;
 
         // Create header row
-        const headerRow = document.createElement('tr');
+        tableHTML += '<tr>';
         for (let i = 0; i < cols; i++) {
-            const th = document.createElement('th');
-            th.contentEditable = true;
-            th.textContent = `Header ${i + 1}`;
-            th.style.color = headerTextColorInput.value;
-            th.style.backgroundColor = headerBgColorInput.value;
-            th.addEventListener('click', handleCellClick);
-
-            // Restore header data if available
-            if (existingData.headers && existingData.headers[i]) {
-                th.textContent = existingData.headers[i].content;
-                th.style.color = existingData.headers[i].color;
-                th.style.backgroundColor = existingData.headers[i].bgcolor;
-            }
-
-            headerRow.appendChild(th);
+            let cellContent = existingContent[0] && existingContent[0][i] ? existingContent[0][i].content : `Header ${i + 1}`;
+            let cellStyle = existingContent[0] && existingContent[0][i] ? existingContent[0][i].style : 
+                `color: ${headerTextColorInput.value}; background-color: ${headerBgColorInput.value}; font-family: ${headerFontSelect.value}; font-size: ${headerSizeSelect.value}em;`;
+            tableHTML += `<th contenteditable="true" style="${cellStyle}">${cellContent}</th>`;
         }
-        table.appendChild(headerRow);
+        tableHTML += '</tr>';
 
         // Create table rows
-        for (let i = 0; i < rows; i++) {
-            const tr = document.createElement('tr');
+        for (let i = 1; i < rows; i++) {
+            tableHTML += '<tr>';
             for (let j = 0; j < cols; j++) {
-                const td = document.createElement('td');
-                td.contentEditable = true;
-                td.textContent = `Cell ${i + 1}-${j + 1}`;
-                td.style.color = textColorInput.value;
-                td.style.backgroundColor = bgColorInput.value;
-                td.addEventListener('click', handleCellClick);
-
-                // Restore cell data if available
-                if (existingData.cells && existingData.cells[i] && existingData.cells[i][j]) {
-                    td.textContent = existingData.cells[i][j].content;
-                    td.style.color = existingData.cells[i][j].color;
-                    td.style.backgroundColor = existingData.cells[i][j].bgcolor;
-                }
-
-                tr.appendChild(td);
+                let cellContent = existingContent[i] && existingContent[i][j] ? existingContent[i][j].content : `Cell ${i}-${j + 1}`;
+                let cellStyle = existingContent[i] && existingContent[i][j] ? existingContent[i][j].style : 
+                    `color: ${textColorInput.value}; background-color: ${bgColorInput.value}; font-family: ${cellFontSelect.value}; font-size: ${cellSizeSelect.value}em;`;
+                tableHTML += `<td contenteditable="true" style="${cellStyle}">${cellContent}</td>`;
             }
-            table.appendChild(tr);
+            tableHTML += '</tr>';
         }
 
-        // Update table style
-        table.style.borderWidth = `${borderInput.value}px`;
-        table.style.borderColor = borderColorInput.value;
-        table.style.width = `${widthInput.value}%`;
+        tableHTML += '</table>';
+        tableContainer.innerHTML = tableHTML;
+
+        // Add event listeners to cells
+        const cells = document.querySelectorAll('#bbcode-table th, #bbcode-table td');
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
     }
 
-    // Save current table state (content, colors)
-    function saveCurrentTableState() {
-        const headers = [];
-        const cells = [];
-
-        table.querySelectorAll('th').forEach((th, index) => {
-            headers[index] = {
-                content: th.textContent,
-                color: th.style.color,
-                bgcolor: th.style.backgroundColor
-            };
-        });
-
-        table.querySelectorAll('tr:not(:first-child)').forEach((tr, rowIndex) => {
-            const rowCells = [];
-            tr.querySelectorAll('td').forEach((td, colIndex) => {
-                rowCells[colIndex] = {
-                    content: td.textContent,
-                    color: td.style.color,
-                    bgcolor: td.style.backgroundColor
-                };
-            });
-            cells[rowIndex] = rowCells;
-        });
-
-        return { headers, cells };
-    }
-
-    // Handle cell click event
     function handleCellClick(event) {
-        currentCell = event.target;
-        if (currentCell.tagName === 'TH') {
-            headerTextColorInput.value = rgbToHex(currentCell.style.color);
-            headerBgColorInput.value = rgbToHex(currentCell.style.backgroundColor);
+        const cell = event.target;
+        if (event.ctrlKey || event.metaKey) {
+            // Multi-select
+            cell.classList.toggle('selected');
+            const index = selectedCells.indexOf(cell);
+            if (index > -1) {
+                selectedCells.splice(index, 1);
+            } else {
+                selectedCells.push(cell);
+            }
         } else {
-            textColorInput.value = rgbToHex(currentCell.style.color);
-            bgColorInput.value = rgbToHex(currentCell.style.backgroundColor);
+            // Single select
+            selectedCells.forEach(c => c.classList.remove('selected'));
+            selectedCells = [cell];
+            cell.classList.add('selected');
+        }
+        updateStyleInputs();
+    }
+
+    function updateStyleInputs() {
+        if (selectedCells.length > 0) {
+            const cell = selectedCells[0];
+            const isHeader = cell.tagName === 'TH';
+            const currentTextColorInput = isHeader ? headerTextColorInput : textColorInput;
+            const currentBgColorInput = isHeader ? headerBgColorInput : bgColorInput;
+            const currentFontSelect = isHeader ? headerFontSelect : cellFontSelect;
+            const currentSizeSelect = isHeader ? headerSizeSelect : cellSizeSelect;
+            const currentBoldCheckbox = isHeader ? headerBoldCheckbox : cellBoldCheckbox;
+            const currentItalicCheckbox = isHeader ? headerItalicCheckbox : cellItalicCheckbox;
+            const currentUnderlineCheckbox = isHeader ? headerUnderlineCheckbox : cellUnderlineCheckbox;
+
+            currentTextColorInput.value = rgbToHex(cell.style.color);
+            currentBgColorInput.value = rgbToHex(cell.style.backgroundColor);
+            currentFontSelect.value = cell.style.fontFamily.replace(/['"]+/g, '');
+            currentSizeSelect.value = cell.style.fontSize.replace('em', '');
+            currentBoldCheckbox.checked = cell.style.fontWeight === 'bold';
+            currentItalicCheckbox.checked = cell.style.fontStyle === 'italic';
+            currentUnderlineCheckbox.checked = cell.style.textDecoration.includes('underline');
         }
     }
 
-    // Apply header color changes in real-time
-    headerTextColorInput.addEventListener('input', () => {
-        if (currentCell && currentCell.tagName === 'TH') {
-            currentCell.style.color = headerTextColorInput.value;
-        }
-    });
+    function updateCellStyles() {
+        selectedCells.forEach(cell => {
+            const isHeader = cell.tagName === 'TH';
+            const currentTextColorInput = isHeader ? headerTextColorInput : textColorInput;
+            const currentBgColorInput = isHeader ? headerBgColorInput : bgColorInput;
+            const currentFontSelect = isHeader ? headerFontSelect : cellFontSelect;
+            const currentSizeSelect = isHeader ? headerSizeSelect : cellSizeSelect;
+            const currentBoldCheckbox = isHeader ? headerBoldCheckbox : cellBoldCheckbox;
+            const currentItalicCheckbox = isHeader ? headerItalicCheckbox : cellItalicCheckbox;
+            const currentUnderlineCheckbox = isHeader ? headerUnderlineCheckbox : cellUnderlineCheckbox;
 
-    headerBgColorInput.addEventListener('input', () => {
-        if (currentCell && currentCell.tagName === 'TH') {
-            currentCell.style.backgroundColor = headerBgColorInput.value;
-        }
-    });
+            cell.style.color = currentTextColorInput.value;
+            cell.style.backgroundColor = currentBgColorInput.value;
+            cell.style.fontFamily = currentFontSelect.value;
+            cell.style.fontSize = `${currentSizeSelect.value}em`;
+            cell.style.fontWeight = currentBoldCheckbox.checked ? 'bold' : 'normal';
+            cell.style.fontStyle = currentItalicCheckbox.checked ? 'italic' : 'normal';
+            cell.style.textDecoration = currentUnderlineCheckbox.checked ? 'underline' : 'none';
+        });
+    }
 
-    // Apply cell color changes in real-time when changing color inputs
-    textColorInput.addEventListener('input', () => {
-        if (currentCell && currentCell.tagName === 'TD') {
-            currentCell.style.color = textColorInput.value;
-        }
-    });
-
-    bgColorInput.addEventListener('input', () => {
-        if (currentCell && currentCell.tagName === 'TD') {
-            currentCell.style.backgroundColor = bgColorInput.value;
-        }
-    });
-
-    // Generate BBCode compatible with vBulletin 4
     function generateBBCode() {
         let bbcode = `[TABLE="width: ${widthInput.value}%, align: center, border: ${borderInput.value}px solid ${borderColorInput.value}"]\n`;
 
-        // Add header row
-        const headers = table.querySelectorAll('th');
-        bbcode += '  [TR]\n';
-        headers.forEach(header => {
-            const textColor = rgbToHex(header.style.color);
-            const bgColor = rgbToHex(header.style.backgroundColor);
-            bbcode += `    [TD="bgcolor: ${bgColor}"][COLOR=${textColor}]${header.textContent}[/COLOR][/TD]\n`;
-        });
-        bbcode += '  [/TR]\n';
-
-        // Add table rows
-        const rows = table.querySelectorAll('tr:not(:first-child)');
+        const rows = document.querySelectorAll('#bbcode-table tr');
         rows.forEach(row => {
             bbcode += '  [TR]\n';
-            row.querySelectorAll('td').forEach(cell => {
-                const textColor = rgbToHex(cell.style.color);
-                const bgColor = rgbToHex(cell.style.backgroundColor);
-                bbcode += `    [TD="bgcolor: ${bgColor}"][COLOR=${textColor}]${cell.textContent}[/COLOR][/TD]\n`;
+            const cells = row.querySelectorAll('th, td');
+            cells.forEach(cell => {
+                const isHeader = cell.tagName === 'TH';
+                let cellContent = cell.textContent;
+
+                // Start with TD tag
+                bbcode += '    [TD';
+                if (cell.style.backgroundColor) {
+                    bbcode += `="bgcolor: ${rgbToHex(cell.style.backgroundColor)}"`;
+                }
+                bbcode += ']';
+
+                // Add individual style tags
+                if (cell.style.color) {
+                    bbcode += `[COLOR=${rgbToHex(cell.style.color)}]`;
+                }
+                if (cell.style.fontFamily) {
+                    bbcode += `[FONT=${cell.style.fontFamily.replace(/['"]+/g, '')}]`;
+                }
+                if (cell.style.fontSize) {
+                    const size = cell.style.fontSize.replace('em', '');
+                    bbcode += `[SIZE=${size}]`;
+                }
+                if (cell.style.fontWeight === 'bold') {
+                    bbcode += '[B]';
+                }
+                if (cell.style.fontStyle === 'italic') {
+                    bbcode += '[I]';
+                }
+                if (cell.style.textDecoration.includes('underline')) {
+                    bbcode += '[U]';
+                }
+
+                // Add content
+                bbcode += cellContent;
+
+                // Close tags in reverse order
+                if (cell.style.textDecoration.includes('underline')) {
+                    bbcode += '[/U]';
+                }
+                if (cell.style.fontStyle === 'italic') {
+                    bbcode += '[/I]';
+                }
+                if (cell.style.fontWeight === 'bold') {
+                    bbcode += '[/B]';
+                }
+                if (cell.style.fontSize) {
+                    bbcode += '[/SIZE]';
+                }
+                if (cell.style.fontFamily) {
+                    bbcode += '[/FONT]';
+                }
+                if (cell.style.color) {
+                    bbcode += '[/COLOR]';
+                }
+
+                // Close TD tag
+                bbcode += '[/TD]\n';
             });
             bbcode += '  [/TR]\n';
         });
@@ -170,12 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
         bbcodeOutput.value = bbcode;
     }
 
-    // Convert RGB to Hex
     function rgbToHex(rgb) {
-        let rgbValues = rgb.match(/\d+/g);
-        if (!rgbValues) return '#000000'; // Default to black if conversion fails
-        return `#${((1 << 24) + (parseInt(rgbValues[0]) << 16) + (parseInt(rgbValues[1]) << 8) + parseInt(rgbValues[2])).toString(16).slice(1).toUpperCase()}`;
+        if (!rgb) return '#000000';
+        const rgbValues = rgb.match(/\d+/g);
+        if (!rgbValues) return '#000000';
+        return `#${rgbValues.map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`;
     }
+
 
     // Event listeners
     rowsInput.addEventListener('input', createTable);
@@ -183,8 +238,26 @@ document.addEventListener('DOMContentLoaded', () => {
     borderInput.addEventListener('input', createTable);
     borderColorInput.addEventListener('input', createTable);
     widthInput.addEventListener('input', createTable);
+
+    textColorInput.addEventListener('input', updateCellStyles);
+    bgColorInput.addEventListener('input', updateCellStyles);
+    cellFontSelect.addEventListener('change', updateCellStyles);
+    cellSizeSelect.addEventListener('change', updateCellStyles);
+    cellBoldCheckbox.addEventListener('change', updateCellStyles);
+    cellItalicCheckbox.addEventListener('change', updateCellStyles);
+    cellUnderlineCheckbox.addEventListener('change', updateCellStyles);
+
+    headerTextColorInput.addEventListener('input', updateCellStyles);
+    headerBgColorInput.addEventListener('input', updateCellStyles);
+    headerFontSelect.addEventListener('change', updateCellStyles);
+    headerSizeSelect.addEventListener('change', updateCellStyles);
+    headerBoldCheckbox.addEventListener('change', updateCellStyles);
+    headerItalicCheckbox.addEventListener('change', updateCellStyles);
+    headerUnderlineCheckbox.addEventListener('change', updateCellStyles);
+
     generateButton.addEventListener('click', generateBBCode);
 
-    // Initial table creation
+    // Initial setup
+    populateSelectOptions();
     createTable();
 });
