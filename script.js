@@ -14,11 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentCell = null;
 
-    // Create table based on inputs
+    // Create or update table based on inputs
     function createTable() {
-        table.innerHTML = '';
         const rows = parseInt(rowsInput.value);
         const cols = parseInt(colsInput.value);
+
+        const existingData = saveCurrentTableState();
+
+        // Clear and recreate table
+        table.innerHTML = '';
 
         // Create header row
         const headerRow = document.createElement('tr');
@@ -29,6 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
             th.style.color = headerTextColorInput.value;
             th.style.backgroundColor = headerBgColorInput.value;
             th.addEventListener('click', handleCellClick);
+
+            // Restore header data if available
+            if (existingData.headers && existingData.headers[i]) {
+                th.textContent = existingData.headers[i].content;
+                th.style.color = existingData.headers[i].color;
+                th.style.backgroundColor = existingData.headers[i].bgcolor;
+            }
+
             headerRow.appendChild(th);
         }
         table.appendChild(headerRow);
@@ -40,9 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const td = document.createElement('td');
                 td.contentEditable = true;
                 td.textContent = `Cell ${i + 1}-${j + 1}`;
-                td.style.color = textColorInput.value; // Default text color
-                td.style.backgroundColor = bgColorInput.value; // Default background color
+                td.style.color = textColorInput.value;
+                td.style.backgroundColor = bgColorInput.value;
                 td.addEventListener('click', handleCellClick);
+
+                // Restore cell data if available
+                if (existingData.cells && existingData.cells[i] && existingData.cells[i][j]) {
+                    td.textContent = existingData.cells[i][j].content;
+                    td.style.color = existingData.cells[i][j].color;
+                    td.style.backgroundColor = existingData.cells[i][j].bgcolor;
+                }
+
                 tr.appendChild(td);
             }
             table.appendChild(tr);
@@ -52,6 +72,34 @@ document.addEventListener('DOMContentLoaded', () => {
         table.style.borderWidth = `${borderInput.value}px`;
         table.style.borderColor = borderColorInput.value;
         table.style.width = `${widthInput.value}%`;
+    }
+
+    // Save current table state (content, colors)
+    function saveCurrentTableState() {
+        const headers = [];
+        const cells = [];
+
+        table.querySelectorAll('th').forEach((th, index) => {
+            headers[index] = {
+                content: th.textContent,
+                color: th.style.color,
+                bgcolor: th.style.backgroundColor
+            };
+        });
+
+        table.querySelectorAll('tr:not(:first-child)').forEach((tr, rowIndex) => {
+            const rowCells = [];
+            tr.querySelectorAll('td').forEach((td, colIndex) => {
+                rowCells[colIndex] = {
+                    content: td.textContent,
+                    color: td.style.color,
+                    bgcolor: td.style.backgroundColor
+                };
+            });
+            cells[rowIndex] = rowCells;
+        });
+
+        return { headers, cells };
     }
 
     // Handle cell click event
@@ -68,17 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Apply header color changes in real-time
     headerTextColorInput.addEventListener('input', () => {
-        const headers = table.querySelectorAll('th');
-        headers.forEach(header => {
-            header.style.color = headerTextColorInput.value;
-        });
+        if (currentCell && currentCell.tagName === 'TH') {
+            currentCell.style.color = headerTextColorInput.value;
+        }
     });
 
     headerBgColorInput.addEventListener('input', () => {
-        const headers = table.querySelectorAll('th');
-        headers.forEach(header => {
-            header.style.backgroundColor = headerBgColorInput.value;
-        });
+        if (currentCell && currentCell.tagName === 'TH') {
+            currentCell.style.backgroundColor = headerBgColorInput.value;
+        }
     });
 
     // Apply cell color changes in real-time when changing color inputs
